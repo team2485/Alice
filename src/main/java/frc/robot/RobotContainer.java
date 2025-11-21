@@ -9,6 +9,8 @@ import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Arm;
+import frc.robot.subsystems.Arm.ArmStates;
 import frc.robot.subsystems.Turret.TurretStates;
 
 import java.util.function.DoubleSupplier;
@@ -36,6 +38,8 @@ public class RobotContainer {
   private final DoubleSupplier doubleSupplier = () -> m_driverController.getLeftX();
   private final Turret m_turret = new Turret(doubleSupplier);
 
+  private final Arm m_arm = new Arm();
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
@@ -59,6 +63,9 @@ public class RobotContainer {
     m_driverController.a().onTrue(new InstantCommand(() -> m_turret.requestState(TurretStates.StateZero)));
 
     m_driverController.b().onTrue(new InstantCommand(() -> m_turret.requestState(TurretStates.StateMoving)));
+
+    m_driverController.rightTrigger().onTrue(new InstantCommand(() -> m_arm.requestState(ArmStates.StateShooting)));
+    m_driverController.leftTrigger().onTrue(new InstantCommand(() -> m_arm.requestState(ArmStates.StateZero)));
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.

@@ -16,25 +16,23 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
 
 
-public class Turret extends SubsystemBase{
-    public enum TurretStates{
+public class Arm extends SubsystemBase{
+    public enum ArmStates{
         StateZero,
         StateIdle,
-        StateMoving,
+        StateShooting,
     }
-    public TurretStates currentState = TurretStates.StateZero;
-    public TurretStates requestedState = TurretStates.StateZero;
+    public ArmStates currentState = ArmStates.StateZero;
+    public ArmStates requestedState = ArmStates.StateZero;
 
-    private final TalonFX m_talon = new TalonFX(1, "rio");
-    private PIDController controller = new PIDController(0.09, 0, .001);
-    public DoubleSupplier axisSupplier;
+    private final TalonFX m_talon = new TalonFX(2, "rio");
+    private PIDController controller = new PIDController(0.2, 0, 0);
 
     DoublePublisher voltagePub;
     DoublePublisher positionPub;
     DoublePublisher targetPub;
 
-    public Turret(DoubleSupplier axisSupplier){
-        this.axisSupplier = axisSupplier;
+    public Arm(){
         var talonFXConfigs = new TalonFXConfiguration();
         //var slot0Configs = talonFXConfigs.Slot0;
         // slot0Configs.kP = .02;
@@ -49,11 +47,11 @@ public class Turret extends SubsystemBase{
         talonFXConfigs.CurrentLimits.StatorCurrentLimitEnable = true;
 
         motorOutputConfigs.Inverted = InvertedValue.CounterClockwise_Positive;
-        controller.reset();
-        m_talon.setPosition(0);
+
         motorOutputConfigs.NeutralMode = NeutralModeValue.Brake;
         m_talon.getConfigurator().apply(talonFXConfigs);
-
+        controller.reset();
+        m_talon.setPosition(0);
         controller.setTolerance(0);
 
         NetworkTableInstance inst = NetworkTableInstance.getDefault();
@@ -72,17 +70,15 @@ public class Turret extends SubsystemBase{
     public void periodic(){
         switch (currentState) {
             case StateZero:
+            // System.out.println(m_talon.getPosition());
                 double power = controller.calculate(m_talon.getPosition().getValueAsDouble(), 0);
-                System.out.println(m_talon.getPosition());
-                m_talon.set(power+0.0014);
+                m_talon.set(power);
                 break;
         
-            case StateMoving:
-                m_talon.set(axisSupplier.getAsDouble()*0.015);
-                if((position > 2.5 && -axisSupplier.getAsDouble() > 0) || (position < -2.5 && -axisSupplier.getAsDouble() < 0)){
-                    m_talon.set(0);
-                }
-                System.out.println(position/5);
+            case StateShooting:
+                double power2 = controller.calculate(m_talon.getPosition().getValueAsDouble(), -0.15 * 4);    
+                m_talon.set(power2);
+                // System.out.println(position/4);
                 break;
             case StateIdle:
                 m_talon.set(0);    
@@ -98,7 +94,7 @@ public class Turret extends SubsystemBase{
         
     }
 
-    public void requestState(TurretStates requestedState){
+    public void requestState(ArmStates requestedState){
         this.requestedState = requestedState;
     }
 }
